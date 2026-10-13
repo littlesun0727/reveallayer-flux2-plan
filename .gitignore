@@ -1,0 +1,18 @@
+# Machine-specific reports and generated bundles
+/checks/
+/machine_environment.json
+/a100_environment.json
+/*.zip
+__pycache__/
+*.py[cod]
+
+# Local environments, credentials, and training artifacts
+.venv/
+.env
+.env.*
+!.env.example
+/models/
+/data/
+/cache/
+/runs/
+/wheelhouse/

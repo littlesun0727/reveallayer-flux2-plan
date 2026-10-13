@@ -1,0 +1,44 @@
+RevealLayer / FLUX.2：第一步，检查离线 A100 训练环境
+
+目的
+确认服务器现有 Python、PyTorch、CUDA、四卡可见性和数据盘容量，
+再决定依赖版本与离线打包方式。本步骤不安装软件、不下载模型。
+
+1. 在 Linux 服务器克隆本仓库；已克隆时在仓库目录运行 git pull --ff-only。
+   服务器只需拉取，不需要推送。也可以把本地生成的
+   step01_environment_check.zip 拷到 Linux 服务器并解压。
+   如果服务器没有解压工具，也可以在 Windows 解压后复制其中的文件。
+   实际运行只需要 collect_machine_info.py（Python 3.8 及以上）。
+
+2. 打开服务器终端，进入脚本所在目录，激活准备训练时使用的环境。
+   如使用 Conda：conda activate 你的环境名
+   如使用容器：在实际训练容器内部运行脚本，并指定容器可见的数据盘路径。
+   先运行 python --version，确认选中了预期的 Python。
+
+3. 运行下列命令；必须把 /实际训练数据盘路径 换成已存在的数据目录：
+
+   python collect_machine_info.py --probe-torch --disk-path /实际训练数据盘路径 --output a100_environment.json
+
+   例：仅当训练数据实际准备放在 /data 且该目录存在时：
+
+   python collect_machine_info.py --probe-torch --disk-path /data --output a100_environment.json
+
+   如果准备把训练数据放在当前目录，可用：
+
+   python collect_machine_info.py --probe-torch --disk-path . --output a100_environment.json
+
+4. 把生成的 a100_environment.json 带回 Windows，放到：
+
+   D:\codes\reveallayer-flux2-plan\checks\a100_environment.json
+
+   如果没有生成报告，保留完整终端报错；如果报告内有导入失败，仍返回原报告。
+   缺包信息用于决定离线依赖，无需在服务器上临时尝试在线安装。
+
+如何继续
+读取报告后，确定是否能复用现有 PyTorch、是否需要独立环境，以及与
+服务器 Linux / Python 匹配的依赖包。再准备固定版本模型、源码和首个数据分片。
+
+本报告只是环境盘点，不代表模型加载、GPU 训练或四卡通信已通过。
+Windows 上的检查结果也不能替代服务器报告。
+
+包内 SHA256SUMS.txt 可在 Linux 用 sha256sum -c SHA256SUMS.txt 检查。
