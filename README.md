@@ -81,3 +81,32 @@ CUDA_VISIBLE_DEVICES=0 python check_klein_environment.py --output checks/klein_e
 ## 后续顺序
 
 确认服务器环境后，固定依赖和上游版本，准备模型及首个数据分片，检查完整场景的数据配对。先验证 Klein VAE 到透明解码器的重建，再实现单卡最小分解训练，最后扩展四卡训练。
+
+## 第三步：下载模型和第一份训练数据
+
+确认第二步报告为 `passed: true` 后执行。服务器已确认可以直接下载 Hugging Face 文件。[下载清单](configs/assets.lock.json) 固定了三个仓库的 commit、文件大小和上游哈希；总计约 27.19 GB：完整 Diffusers 格式的 Klein base 4B、XVAE 检查点，以及数据说明、元数据和首个训练 tar。
+
+选择有足够空间的资源根目录，以下以 `/data/reveallayer_flux2_assets` 为例，请替换成自己有写权限的路径：
+
+```bash
+git pull --ff-only
+python download_assets.py --root /data/reveallayer_flux2_assets --verify-hashes
+python inspect_first_shard.py --root /data/reveallayer_flux2_assets
+```
+
+下载支持中断后重跑，已完成的文件可复用。`--verify-hashes` 会额外顺序读取下载文件校验哈希，所需时间取决于磁盘吞吐。可先加 `--dry-run` 查看清单；也可用 `--component data`、`--component klein` 或 `--component xvae` 分开下载。已下载后可用 `--verify-only` 完全离线校验。
+
+本批不包含用途重复的 Klein 单文件权重，也不包含原 FLUX.1 的 LoRA / OGA。文件保存在：
+
+```text
+资源根目录/
+  models/klein_base_4b/
+  models/xvae_original/xvae/transparent_decoder_ckpt.pth
+  data/raw/train/trainMetaData.json
+  data/raw/train/train-000000.tar
+  manifests/assets_all.json
+```
+
+初查脚本直接读取 tar，不解压整个分片。它统计能完整配对的场景，并检查前 5 个完整场景的图像模式、尺寸、alpha 和框，生成 `checks/first_shard.json`。不在首分片内的元数据场景会统计为 absent，不能因此判定数据集损坏。该检查尚未验证层序、重合成或完成计划要求的 100 场景可视化审计。
+
+返回 `checks/first_shard.json` 后，继续实现正式场景读取与可视化审计，然后用单卡验证真实 Klein VAE 编码/解码和透明解码器适配。
